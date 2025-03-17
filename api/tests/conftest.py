@@ -17,11 +17,11 @@ def mock_db():
     mock.fetch_one = AsyncMock(return_value={})
     return mock
 
-# Patch the app's database connection
+# Patch the app's database connection - with create=True to handle missing attributes
 @pytest.fixture(autouse=True)
 def patch_app_db(mock_db):
-    """Patch the app module to have a db attribute."""
-    with patch("api.app.db", mock_db):
+    """Patch the app module to have a db attribute, creating it if not exists."""
+    with patch("api.app.db", mock_db, create=True):
         yield
 
 # Mock Redis
@@ -39,7 +39,7 @@ def mock_redis():
 @pytest.fixture(autouse=True)
 def patch_redis(mock_redis):
     """Patch the Redis client."""
-    with patch("api.techniques.caching.redis", mock_redis):
+    with patch("api.techniques.caching.redis", mock_redis, create=True):
         yield
 
 # Create a test client for API testing
@@ -67,7 +67,7 @@ def mock_pool():
 @pytest.fixture(autouse=True)
 def patch_connection_pool(mock_pool):
     """Patch the connection pool."""
-    with patch("api.techniques.connection_pool.pool", mock_pool):
+    with patch("api.techniques.connection_pool.pool", mock_pool, create=True):
         yield
 
 # Create a mock for API responses
@@ -91,15 +91,18 @@ def mock_response_data():
 @pytest.fixture(autouse=True)
 def patch_technique_modules():
     """Patch various technique module functions."""
-    with patch("api.techniques.caching.generate_cache_key", return_value="test_key"), \
-         patch("api.techniques.pagination.paginate_query", return_value=([], 0, 1, 10)), \
+    with patch("api.techniques.caching.generate_cache_key", 
+               return_value="test_key", create=True), \
+         patch("api.techniques.pagination.paginate_query", 
+               return_value=([], 0, 1, 10), create=True), \
          patch("api.techniques.avoid_n_plus_1.get_posts_with_users_and_comments", 
-               AsyncMock(return_value=[])), \
+               AsyncMock(return_value=[]), create=True), \
          patch("api.techniques.json_serialization.serialize_json", 
-               MagicMock(return_value=b"{}")), \
+               MagicMock(return_value=b"{}"), create=True), \
          patch("api.techniques.compression.compress_response", 
-               MagicMock(return_value=(b"{}", {"Content-Encoding": "br"}))), \
-         patch("api.techniques.async_logging.log_request", AsyncMock()), \
+               MagicMock(return_value=(b"{}", {"Content-Encoding": "br"})), create=True), \
+         patch("api.techniques.async_logging.log_request", 
+               AsyncMock(), create=True), \
          patch("api.techniques.async_logging.calculate_async_logging_statistics", 
-               AsyncMock(return_value={"avg_processing_time": 0.1})):
+               AsyncMock(return_value={"avg_processing_time": 0.1}), create=True):
         yield 

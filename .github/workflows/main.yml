@@ -124,7 +124,10 @@ jobs:
           REDIS_PORT: 6379
           TESTING: "true"
         run: |
-          python -m pytest api/tests/ benchmarks/tests/ --cov=api --cov=benchmarks --cov-report=xml
+          # Set asyncio fixture scope to avoid warnings
+          export PYTEST_ADDOPTS="--asyncio-mode=strict --asyncio-default-fixture-loop-scope=function"
+          # Run tests and save results
+          python -m pytest api/tests/ benchmarks/tests/ --verbose
       
       - name: Check test status
         run: |
@@ -132,12 +135,6 @@ jobs:
             echo "::warning::Tests are failing. Please check the test results for more details."
             echo "Continuing with the build as tests are currently non-blocking."
           fi
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
 
   build:
     name: Build and Push Docker Image

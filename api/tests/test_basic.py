@@ -1,7 +1,9 @@
 """
-Basic tests for the API to ensure the CI pipeline can run tests.
+Basic tests for the API to ensure test infrastructure is working.
 """
+import pytest
+
 
 def test_basic():
-    """A simple test that always passes."""
-    assert True, "Basic test should pass" 
+    """Basic test that always passes."""
+    assert True, "Basic test should always pass" 
