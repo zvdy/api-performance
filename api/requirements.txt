@@ -7,7 +7,7 @@ ujson==5.7.0
 orjson==3.8.12
 asyncpg==0.27.0
 aiocache==0.12.1
-python-multipart==0.0.6
+python-multipart==0.0.20
 aiofiles==23.1.0
 structlog==23.1.0
 pydantic==1.10.8
