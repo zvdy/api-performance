@@ -9,7 +9,7 @@ asyncpg==0.27.0
 aiocache==0.12.1
 python-multipart==0.0.6
 aiofiles==23.1.0
-structlog==23.1.0
+structlog==25.2.0
 pydantic==1.10.8
 python-dotenv==1.0.0
 httpx==0.24.1
