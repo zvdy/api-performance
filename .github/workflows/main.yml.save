@@ -1,3 +1,8 @@
+^C
+^C
+^C
+^C
+cd /home/zvdy/Desktop/api-performance && git add .github/ && git commit -m "ci: Add simplified CI/CD pipeline" -m "Add streamlined CI/CD workflows:\n- Main workflow for linting, testing, and Docker image publishing\n- Manual Docker build workflow with vulnerability scanning\n- Benchmark workflow for performance testing"
 name: CI/CD Pipeline
 
 on:
@@ -27,25 +32,22 @@ jobs:
           pip install flake8 black isort mypy
           pip install -r api/requirements.txt
       
-      - name: Lint with flake8 (critical errors only)
+      - name: Lint with flake8
         run: |
-          # Only check for critical errors (syntax errors, undefined names)
           flake8 api/ benchmarks/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Display all errors but don't fail the build
-          flake8 api/ benchmarks/ --count --max-complexity=20 --max-line-length=127 --statistics --exit-zero
+          flake8 api/ benchmarks/ --count --max-complexity=10 --max-line-length=127 --statistics
       
-      # Make formatting checks more lenient by allowing them to fail
-      - name: Check formatting with black (non-blocking)
+      - name: Check formatting with black
         run: |
-          black --check api/ benchmarks/ || echo "Black formatting issues found but continuing..."
+          black --check api/ benchmarks/
       
-      - name: Check imports with isort (non-blocking)
+      - name: Check imports with isort
         run: |
-          isort --check-only --profile black api/ benchmarks/ || echo "Import sorting issues found but continuing..."
+          isort --check-only --profile black api/ benchmarks/
       
-      - name: Type check with mypy (non-blocking)
+      - name: Type check with mypy
         run: |
-          mypy api/ benchmarks/ || echo "Type check issues found but continuing..."
+          mypy api/ benchmarks/
 
   test:
     name: Run Tests
@@ -152,4 +154,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache,mode=max
+          cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache,mode=max 
