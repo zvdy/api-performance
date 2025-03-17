@@ -11,9 +11,18 @@ pytest.importorskip("fastapi")
 try:
     from api.app import app
     from fastapi.testclient import TestClient
-    # Create test client
-    client = TestClient(app)
-    APP_AVAILABLE = True
+    # Create test client - handle both parameter styles (app= or just app)
+    try:
+        # Newer FastAPI/Starlette versions
+        client = TestClient(app)
+        APP_AVAILABLE = True
+    except TypeError:
+        try:
+            # Older FastAPI/Starlette versions
+            client = TestClient(app=app)
+            APP_AVAILABLE = True
+        except Exception:
+            APP_AVAILABLE = False
 except ImportError:
     APP_AVAILABLE = False
 

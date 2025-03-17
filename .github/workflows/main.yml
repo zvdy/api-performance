@@ -24,8 +24,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort mypy
-          pip install -r api/requirements.txt
+          pip install flake8==6.0.0 black==23.3.0 isort==5.12.0 mypy==1.3.0
+          if [ -f api/requirements.txt ]; then
+            pip install -r api/requirements.txt
+          fi
       
       - name: Lint with flake8 (critical errors only)
         run: |
@@ -91,6 +93,8 @@ jobs:
           python -m pip install --upgrade pip
           # Install test requirements first which include pytest and related packages
           pip install -r requirements-test.txt
+          # Install additional dependencies needed for testing with specific versions for compatibility
+          pip install fastapi==0.95.1 starlette==0.26.1 sqlalchemy==2.0.15 redis==4.5.5 databases==0.7.0 asyncpg==0.27.0 psycopg2-binary==2.9.6 ujson==5.7.0 orjson==3.8.14 brotli==1.0.9
           # Now install application dependencies
           if [ -f api/requirements.txt ]; then
             pip install -r api/requirements.txt
@@ -98,8 +102,6 @@ jobs:
           if [ -f benchmarks/requirements.txt ]; then
             pip install -r benchmarks/requirements.txt
           fi
-          # Install additional dependencies needed for testing
-          pip install sqlalchemy redis databases asyncpg psycopg2-binary ujson orjson brotli fastapi
       
       - name: Initialize test database
         run: |
@@ -120,7 +122,7 @@ jobs:
           REDIS_PORT: 6379
           TESTING: "true"
         run: |
-          pytest api/tests/ benchmarks/tests/ --cov=api --cov=benchmarks --cov-report=xml
+          python -m pytest api/tests/ benchmarks/tests/ --cov=api --cov=benchmarks --cov-report=xml
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
