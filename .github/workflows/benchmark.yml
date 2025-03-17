@@ -1,81 +1,43 @@
-name: Performance Benchmarks
+name: API Performance Benchmark
 
 on:
   workflow_dispatch:
     inputs:
-      iterations:
-        description: 'Number of benchmark iterations'
-        required: false
-        default: '5'
+      target_url:
+        description: 'Target API URL to benchmark'
+        required: true
+        default: 'http://localhost:8000'
+      requests:
+        description: 'Number of requests to perform'
+        required: true
+        default: '1000'
       concurrency:
-        description: 'Concurrency level'
-        required: false
+        description: 'Number of concurrent requests'
+        required: true
         default: '10'
-      techniques:
-        description: 'Specific techniques to benchmark (comma-separated, leave empty for all)'
-        required: false
-        default: ''
-      image:
-        description: 'Docker image to use for benchmarks'
-        required: false
-        default: 'api-performance:latest'
+      technique:
+        description: 'Optimization technique to test'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+          - basic
+          - caching
+          - compression
+          - batching
+          - all
 
 jobs:
   benchmark:
-    name: Run Performance Benchmarks
+    name: Run API Benchmark
     runs-on: ubuntu-latest
-    services:
-      api:
-        image: api-performance:latest
-        ports:
-          - 8000:8000
-        env:
-          POSTGRES_HOST: postgres
-          POSTGRES_PORT: 5432
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance
-          REDIS_HOST: redis
-          REDIS_PORT: 6379
-        options: >-
-          --health-cmd "curl -f http://localhost:8000/ || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 3
-      
-      postgres:
-        image: postgres:14
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      
-      redis:
-        image: redis:6
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-      
-      - name: Pull Docker image if needed
-        run: |
-          if [[ "${{ github.event.inputs.image }}" != "api-performance:latest" ]]; then
-            docker pull ${{ github.event.inputs.image }}
-            docker tag ${{ github.event.inputs.image }} api-performance:latest
-          fi
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -83,62 +45,23 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install test requirements first which include test and benchmark dependencies
-          pip install -r requirements-test.txt
-          # Check for benchmark requirements
           if [ -f benchmarks/requirements.txt ]; then
             pip install -r benchmarks/requirements.txt
-          fi
-          # Ensure visualization libraries are installed
-          pip install matplotlib pandas seaborn
-      
-      - name: Initialize database
-        run: |
-          if [ -f databases/postgres/init.sql ]; then
-            PGPASSWORD=postgres psql -h localhost -U postgres -d api_performance -f databases/postgres/init.sql
           else
-            echo "No database init script found, skipping database initialization"
+            pip install pytest pytest-benchmark requests pandas matplotlib
           fi
       
-      - name: Run benchmarks
+      - name: Run benchmark script
         run: |
-          TECHNIQUES="${{ github.event.inputs.techniques }}"
-          ITERATIONS="${{ github.event.inputs.iterations || '5' }}"
-          CONCURRENCY="${{ github.event.inputs.concurrency || '10' }}"
-          
-          # Check if run_all.py exists
-          if [ -z "$TECHNIQUES" ] && [ -f benchmarks/run_all.py ]; then
-            python benchmarks/run_all.py --iterations $ITERATIONS --concurrency $CONCURRENCY
-          elif [ -f benchmarks/run.py ]; then
-            # Run individual techniques if specified
-            if [ -z "$TECHNIQUES" ]; then
-              # If no techniques specified but run_all.py doesn't exist, run default techniques
-              TECHNIQUES="caching,connection_pool,avoid_n_plus_1,pagination,json_serialization,compression,async_logging"
-            fi
-            
-            IFS=',' read -ra TECHNIQUE_ARRAY <<< "$TECHNIQUES"
-            for TECHNIQUE in "${TECHNIQUE_ARRAY[@]}"; do
-              python benchmarks/run.py --technique $TECHNIQUE --iterations $ITERATIONS --concurrency $CONCURRENCY
-            done
-          else
-            echo "No benchmark scripts found. Please make sure benchmarks/run_all.py or benchmarks/run.py exists."
-            exit 1
-          fi
-      
-      - name: Generate visualization report
-        run: |
-          if [ -f benchmarks/visualize_results.py ]; then
-            python benchmarks/visualize_results.py --output benchmark_report.html
-          else
-            echo "No visualization script found, skipping report generation"
-            mkdir -p reports
-            echo "<html><body><h1>No visualization available</h1></body></html>" > benchmark_report.html
-          fi
+          cd benchmarks
+          python benchmark.py --url ${{ github.event.inputs.target_url }} --requests ${{ github.event.inputs.requests }} --concurrency ${{ github.event.inputs.concurrency }} --technique ${{ github.event.inputs.technique }}
       
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: |
-            reports/
-            benchmark_report.html
+            benchmarks/results/*.json
+            benchmarks/results/*.csv
+            benchmarks/results/*.png
+          retention-days: 90

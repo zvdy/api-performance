@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -80,10 +80,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -93,8 +93,8 @@ jobs:
           python -m pip install --upgrade pip
           # Install test requirements first which include pytest and related packages
           pip install -r requirements-test.txt
-          # Install additional dependencies needed for testing with specific versions for compatibility
-          pip install fastapi==0.95.1 starlette==0.26.1 sqlalchemy==2.0.15 redis==4.5.5 databases==0.7.0 asyncpg==0.27.0 psycopg2-binary==2.9.6 ujson==5.7.0 orjson==3.8.14 brotli==1.0.9
+          # Install additional dependencies needed for testing with specific secure versions
+          pip install fastapi>=0.100.0 starlette>=0.40.0 sqlalchemy>=2.0.15 redis>=5.2.1 databases>=0.9.0 asyncpg>=0.27.0 psycopg2-binary>=2.9.10 ujson>=5.7.0 orjson>=3.9.15 brotli>=1.0.9 python-multipart>=0.0.20 setuptools>=70.0.0 pydantic>=2.10.6 uvicorn>=0.34.0 tenacity>=9.0.0 structlog>=25.2.0 starlette-exporter>=0.23.0 uvloop>=0.20.0
           # Now install application dependencies
           if [ -f api/requirements.txt ]; then
             pip install -r api/requirements.txt
@@ -125,9 +125,9 @@ jobs:
           python -m pytest api/tests/ benchmarks/tests/ --cov=api --cov=benchmarks --cov-report=xml
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: false
 
   build:
@@ -137,20 +137,20 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       
       - name: Login to DockerHub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
       - name: Extract metadata for Docker
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/api-performance
           tags: |
@@ -159,7 +159,7 @@ jobs:
             latest
       
       - name: Build and push API image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./api
           push: true
