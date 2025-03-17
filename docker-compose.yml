@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for testing relational data operations
+  postgres:
+    image: postgres:15-alpine
+    container_name: api_perf_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: api_performance
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./databases/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    command: postgres -c max_connections=300
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and message queue
+  redis:
+    image: redis:7-alpine
+    container_name: api_perf_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./databases/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # API application
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: api_perf_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=api_performance
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEBUG=False
+      - LOG_LEVEL=INFO
+
+  # Benchmark runner (optional, can also be run manually)
+  benchmarks:
+    build:
+      context: ./benchmarks
+      dockerfile: Dockerfile
+    container_name: api_perf_benchmark
+    volumes:
+      - ./benchmarks:/app
+    depends_on:
+      - api
+    environment:
+      - API_BASE_URL=http://api:8000
+    # The benchmark container is designed to be run on-demand, not continuously
+    profiles:
+      - benchmarking
+
+volumes:
+  postgres_data:
+  redis_data: 
