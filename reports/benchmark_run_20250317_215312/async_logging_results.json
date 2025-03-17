@@ -1,0 +1,202 @@
+{
+  "technique": "Asynchronous Logging",
+  "base_url": "http://localhost:8000",
+  "iterations": 1,
+  "concurrency": 5,
+  "timestamp": 1742244799.5471828,
+  "single_request": {
+    "async": [
+      {
+        "status_code": 200,
+        "response_time_ms": 3.1082630157470703,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.8911361694335938,
+        "success": true,
+        "headers": {
+          "content-length": "119"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.834869384765625,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.2469291687011719,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.722501754760742,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      }
+    ],
+    "sync": [
+      {
+        "status_code": 200,
+        "response_time_ms": 2.406597137451172,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.3431777954101562,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.359151840209961,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.5348663330078125,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.6679039001464844,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      }
+    ]
+  },
+  "concurrent_requests": {
+    "async": [
+      {
+        "status_code": 200,
+        "response_time_ms": 3.341197967529297,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.717588424682617,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.399776458740234,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.924297332763672,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.779577255249023,
+        "success": true,
+        "headers": {
+          "content-length": "120"
+        }
+      }
+    ],
+    "sync": [
+      {
+        "status_code": 200,
+        "response_time_ms": 5.102396011352539,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 7.996320724487305,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 7.423639297485352,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 7.5130462646484375,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.971670150756836,
+        "success": true,
+        "headers": {
+          "content-length": "121"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "sync": {
+      "avg_response_time_ms": 4.6318769454956055,
+      "min_response_time_ms": 2.3431777954101562,
+      "max_response_time_ms": 7.996320724487305,
+      "median_response_time_ms": 3.8851499557495117,
+      "stdev_response_time_ms": 2.4276400680826273,
+      "sample_size": 10,
+      "requests_per_second": 215.89520010294686
+    },
+    "async": {
+      "avg_response_time_ms": 3.2966136932373047,
+      "min_response_time_ms": 1.2469291687011719,
+      "max_response_time_ms": 4.924297332763672,
+      "median_response_time_ms": 3.2247304916381836,
+      "stdev_response_time_ms": 1.364836605106617,
+      "sample_size": 10,
+      "requests_per_second": 303.3415780718883
+    },
+    "improvement_factor": 1.405040862081435,
+    "avg_response_time_ms": 3.2966136932373047,
+    "requests_per_second": 303.3415780718883
+  }
+}

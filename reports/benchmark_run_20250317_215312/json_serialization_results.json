@@ -1,0 +1,202 @@
+{
+  "technique": "JSON Serialization",
+  "base_url": "http://localhost:8000",
+  "iterations": 1,
+  "concurrency": 5,
+  "timestamp": 1742244797.4441311,
+  "single_request": {
+    "optimized": [
+      {
+        "status_code": 200,
+        "response_time_ms": 4.39906120300293,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.0835399627685547,
+        "success": true,
+        "headers": {
+          "content-length": "135"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.7998218536376953,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.073049545288086,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.8477439880371094,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      }
+    ],
+    "standard": [
+      {
+        "status_code": 200,
+        "response_time_ms": 2.0532608032226562,
+        "success": true,
+        "headers": {
+          "content-length": "132"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.054452896118164,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.7120838165283203,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.9829273223876953,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 2.1398067474365234,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      }
+    ]
+  },
+  "concurrent_requests": {
+    "optimized": [
+      {
+        "status_code": 200,
+        "response_time_ms": 4.885673522949219,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.492210388183594,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.115032196044922,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.666971206665039,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.539894104003906,
+        "success": true,
+        "headers": {
+          "content-length": "136"
+        }
+      }
+    ],
+    "standard": [
+      {
+        "status_code": 200,
+        "response_time_ms": 5.037069320678711,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.703449249267578,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 6.476402282714844,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.098581314086914,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 6.06846809387207,
+        "success": true,
+        "headers": {
+          "content-length": "133"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "standard": {
+      "avg_response_time_ms": 3.8326501846313477,
+      "min_response_time_ms": 1.7120838165283203,
+      "max_response_time_ms": 6.476402282714844,
+      "median_response_time_ms": 3.588438034057617,
+      "stdev_response_time_ms": 1.9903548136641285,
+      "sample_size": 10,
+      "requests_per_second": 260.9160637748596
+    },
+    "optimized": {
+      "avg_response_time_ms": 3.8902997970581055,
+      "min_response_time_ms": 1.7998218536376953,
+      "max_response_time_ms": 5.666971206665039,
+      "median_response_time_ms": 4.642367362976074,
+      "stdev_response_time_ms": 1.7095265273667917,
+      "sample_size": 10,
+      "requests_per_second": 257.04959827420316
+    },
+    "improvement_factor": 0.9851811902850384,
+    "avg_response_time_ms": 3.8902997970581055,
+    "requests_per_second": 257.04959827420316
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "technique": "Connection Pooling",
+  "base_url": "http://localhost:8000",
+  "iterations": 1,
+  "concurrency": 5,
+  "timestamp": 1742244793.697491,
+  "single_request": {
+    "with_pool": [
+      {
+        "status_code": 200,
+        "response_time_ms": 2.2735595703125,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.7137527465820312,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.5883445739746094,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.432657241821289,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 1.5621185302734375,
+        "success": true,
+        "headers": {
+          "content-length": "94"
+        }
+      }
+    ],
+    "without_pool": [
+      {
+        "status_code": 200,
+        "response_time_ms": 129.9729347229004,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 133.41140747070312,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 129.24504280090332,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 130.34892082214355,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 129.9126148223877,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      }
+    ]
+  },
+  "concurrent_requests": {
+    "with_pool": [
+      {
+        "status_code": 200,
+        "response_time_ms": 5.376100540161133,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.5623779296875,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 4.762411117553711,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.5561065673828125,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 5.211353302001953,
+        "success": true,
+        "headers": {
+          "content-length": "95"
+        }
+      }
+    ],
+    "without_pool": [
+      {
+        "status_code": 200,
+        "response_time_ms": 643.6488628387451,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 643.7370777130127,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 644.249677658081,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 642.2929763793945,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      },
+      {
+        "status_code": 200,
+        "response_time_ms": 641.3915157318115,
+        "success": true,
+        "headers": {
+          "content-length": "98"
+        }
+      }
+    ]
+  },
+  "summary": {
+    "without_pool": {
+      "avg_response_time_ms": 386.8211030960083,
+      "min_response_time_ms": 129.24504280090332,
+      "max_response_time_ms": 644.249677658081,
+      "median_response_time_ms": 387.4014616012573,
+      "stdev_response_time_ms": 270.10709689048605,
+      "sample_size": 10,
+      "requests_per_second": 2.585174366125009
+    },
+    "with_pool": {
+      "avg_response_time_ms": 3.4038782119750977,
+      "min_response_time_ms": 1.432657241821289,
+      "max_response_time_ms": 5.5561065673828125,
+      "median_response_time_ms": 3.41796875,
+      "stdev_response_time_ms": 1.8161174952094015,
+      "sample_size": 10,
+      "requests_per_second": 293.7825438295428
+    },
+    "improvement_factor": 113.64128767449516,
+    "avg_response_time_ms": 3.4038782119750977,
+    "requests_per_second": 293.7825438295428
+  }
+}
