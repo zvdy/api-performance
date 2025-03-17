@@ -2,7 +2,7 @@ fastapi==0.95.1
 uvicorn==0.22.0
 sqlalchemy==1.4.48
 psycopg2-binary==2.9.6
-redis==4.5.5
+redis==5.2.1
 ujson==5.7.0
 orjson==3.8.12
 asyncpg==0.27.0
