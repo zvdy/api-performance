@@ -83,12 +83,22 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r benchmarks/requirements.txt
+          # Install test requirements first which include test and benchmark dependencies
+          pip install -r requirements-test.txt
+          # Check for benchmark requirements
+          if [ -f benchmarks/requirements.txt ]; then
+            pip install -r benchmarks/requirements.txt
+          fi
+          # Ensure visualization libraries are installed
           pip install matplotlib pandas seaborn
       
       - name: Initialize database
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d api_performance -f databases/postgres/init.sql
+          if [ -f databases/postgres/init.sql ]; then
+            PGPASSWORD=postgres psql -h localhost -U postgres -d api_performance -f databases/postgres/init.sql
+          else
+            echo "No database init script found, skipping database initialization"
+          fi
       
       - name: Run benchmarks
         run: |
@@ -96,18 +106,34 @@ jobs:
           ITERATIONS="${{ github.event.inputs.iterations || '5' }}"
           CONCURRENCY="${{ github.event.inputs.concurrency || '10' }}"
           
-          if [ -z "$TECHNIQUES" ]; then
+          # Check if run_all.py exists
+          if [ -z "$TECHNIQUES" ] && [ -f benchmarks/run_all.py ]; then
             python benchmarks/run_all.py --iterations $ITERATIONS --concurrency $CONCURRENCY
-          else
+          elif [ -f benchmarks/run.py ]; then
+            # Run individual techniques if specified
+            if [ -z "$TECHNIQUES" ]; then
+              # If no techniques specified but run_all.py doesn't exist, run default techniques
+              TECHNIQUES="caching,connection_pool,avoid_n_plus_1,pagination,json_serialization,compression,async_logging"
+            fi
+            
             IFS=',' read -ra TECHNIQUE_ARRAY <<< "$TECHNIQUES"
             for TECHNIQUE in "${TECHNIQUE_ARRAY[@]}"; do
               python benchmarks/run.py --technique $TECHNIQUE --iterations $ITERATIONS --concurrency $CONCURRENCY
             done
+          else
+            echo "No benchmark scripts found. Please make sure benchmarks/run_all.py or benchmarks/run.py exists."
+            exit 1
           fi
       
       - name: Generate visualization report
         run: |
-          python benchmarks/visualize_results.py --output benchmark_report.html
+          if [ -f benchmarks/visualize_results.py ]; then
+            python benchmarks/visualize_results.py --output benchmark_report.html
+          else
+            echo "No visualization script found, skipping report generation"
+            mkdir -p reports
+            echo "<html><body><h1>No visualization available</h1></body></html>" > benchmark_report.html
+          fi
       
       - name: Upload benchmark results
         uses: actions/upload-artifact@v3

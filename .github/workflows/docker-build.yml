@@ -32,6 +32,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
+      - name: Validate Docker context
+        run: |
+          if [ ! -d "./api" ]; then
+            echo "Error: ./api directory not found. Cannot build Docker image."
+            exit 1
+          fi
+          if [ ! -f "./api/Dockerfile" ]; then
+            echo "Warning: Dockerfile not found in ./api directory. Will use default Dockerfile from the build context."
+          fi
+      
       - name: Build and push API image
         uses: docker/build-push-action@v4
         with:
