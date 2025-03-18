@@ -9,30 +9,6 @@ jobs:
   validate:
     name: PR Validation
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     
     steps:
       - name: Checkout code
@@ -48,23 +24,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install flake8==6.0.0
-          pip install -r api/requirements.txt
-          pip install -r benchmarks/requirements.txt
       
       - name: Basic lint check
         run: |
           # Only check for critical errors (syntax errors, undefined names)
           flake8 api/ benchmarks/ --count --select=E9,F63,F7,F82 --show-source --statistics
       
-      - name: Run benchmark tests
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          PYTHONPATH: ${{ github.workspace }}
+      - name: Start services and run benchmarks
         run: |
-          python benchmarks/run.py --iterations 5 --concurrency 10 
+          # Start all services with Docker Compose
+          docker-compose up -d
+          
+          # Wait for services to be healthy
+          echo "Waiting for services to be healthy..."
+          timeout 60 bash -c 'while ! docker-compose ps | grep -q "healthy"; do sleep 2; done'
+          
+          # Run benchmarks using the benchmarks service
+          docker-compose run --rm benchmarks python run.py --iterations 5 --concurrency 10 
