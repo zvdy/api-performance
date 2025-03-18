@@ -64,8 +64,8 @@ services:
   # Benchmark runner (optional, can also be run manually)
   benchmarks:
     build:
-      context: ./benchmarks
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: benchmarks/Dockerfile
     container_name: api_perf_benchmark
     volumes:
       - ./benchmarks:/app

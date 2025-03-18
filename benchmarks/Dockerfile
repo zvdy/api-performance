@@ -4,7 +4,8 @@ WORKDIR /app
 
 # Install dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY ../api/requirements.txt api-requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -r api-requirements.txt
 
 # Create directory for API code
 RUN mkdir -p /usr/local/lib/python3.10/site-packages/api
