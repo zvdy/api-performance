@@ -24,38 +24,24 @@ wheels/
 venv/
 env/
 ENV/
-.env
-.venv
-env.bak/
-venv.bak/
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
 
 # Logs and databases
 *.log
 *.sqlite
 *.db
 
-# Coverage and test reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+# Reports
+reports/
 
 # Docker
 .docker/
 
-# Misc
+# OS
 .DS_Store
 Thumbs.db
