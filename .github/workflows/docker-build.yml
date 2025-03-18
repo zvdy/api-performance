@@ -1,39 +1,51 @@
-name: Manual Docker Build
+name: Docker Build
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Docker image tag'
-        required: true
-        default: 'latest'
 
 jobs:
   build:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
+      
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push
+      
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/api-performance
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest
+      
+      - name: Build and push API image
         uses: docker/build-push-action@v6
         with:
           context: ./api
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-performance:${{ github.event.inputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache,mode=max
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "::notice::Docker image built and pushed successfully!"
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
