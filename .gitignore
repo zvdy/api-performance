@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -45,3 +46,31 @@ reports/
 # OS
 .DS_Store
 Thumbs.db
+=======
+**/.pytest_cache
+**/*__pycache__
+
+# Coverage related
+coverage.xml
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-*
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+.DS_Store
+>>>>>>> 3634c12aaa975d9bf0181db4d2518168fdc3e981
