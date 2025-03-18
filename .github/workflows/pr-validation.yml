@@ -35,7 +35,8 @@ jobs:
       
       - name: Start services and run benchmarks
         run: |
-          # Start all services with Docker Compose
+          # Build and start all services with Docker Compose
+          docker compose build
           docker compose up -d
           
           # Wait for services to be healthy
