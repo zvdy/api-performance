@@ -5,6 +5,8 @@ This module benchmarks the compression optimization technique by comparing
 response times and sizes with and without compression.
 """
 
+import os
+import json
 import time
 import asyncio
 import aiohttp
