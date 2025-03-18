@@ -30,14 +30,17 @@ jobs:
           # Only check for critical errors (syntax errors, undefined names)
           flake8 api/ benchmarks/ --count --select=E9,F63,F7,F82 --show-source --statistics
       
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
       - name: Start services and run benchmarks
         run: |
           # Start all services with Docker Compose
-          docker-compose up -d
+          docker compose up -d
           
           # Wait for services to be healthy
           echo "Waiting for services to be healthy..."
-          timeout 60 bash -c 'while ! docker-compose ps | grep -q "healthy"; do sleep 2; done'
+          timeout 60 bash -c 'while ! docker compose ps | grep -q "healthy"; do sleep 2; done'
           
           # Run benchmarks using the benchmarks service
-          docker-compose run --rm benchmarks python run.py --iterations 5 --concurrency 10 
+          docker compose run --rm benchmarks python run.py --iterations 5 --concurrency 10 
