@@ -64,16 +64,16 @@ services:
   # Benchmark runner (optional, can also be run manually)
   benchmarks:
     build:
-      context: ./benchmarks
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: benchmarks/Dockerfile
     container_name: api_perf_benchmark
     volumes:
       - ./benchmarks:/app
+      - ./api/techniques:/usr/local/lib/python3.10/site-packages/api/techniques
     depends_on:
       - api
     environment:
       - API_BASE_URL=http://api:8000
-    # The benchmark container is designed to be run on-demand, not continuously
     profiles:
       - benchmarking
 
