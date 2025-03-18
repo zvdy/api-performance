@@ -1,277 +1,213 @@
 """
 Compression Benchmark Module
 
-This module benchmarks the performance improvement from using HTTP compression.
+This module benchmarks the compression optimization technique by comparing
+response times and sizes with and without compression.
 """
 
 import time
-import statistics
-import httpx
 import asyncio
-import json
+import aiohttp
+import logging
 from typing import Dict, Any, List
-import os
+from statistics import mean
+from api.techniques.compression import generate_large_payload
 
-async def benchmark_request(client: httpx.AsyncClient, url: str, params: Dict[str, Any] = None, headers: Dict[str, str] = None) -> Dict[str, Any]:
+logger = logging.getLogger(__name__)
+
+async def measure_response(session: aiohttp.ClientSession, url: str, use_compression: bool) -> Dict[str, float]:
     """
-    Make a benchmark request and measure response time
+    Measure response time and size for a single request
     
     Args:
-        client: HTTP client
-        url: URL to request
-        params: Query parameters
-        headers: Request headers
+        session: aiohttp client session
+        url: API endpoint URL
+        use_compression: Whether to request compressed response
         
     Returns:
-        Dictionary with request metrics
+        Dictionary with response metrics
     """
+    headers = {"Accept-Encoding": "br,gzip"} if use_compression else {}
+    params = {"compressed": "true" if use_compression else "false"}
+    
     start_time = time.time()
-    response = await client.get(url, params=params, headers=headers)
-    end_time = time.time()
-    
-    elapsed_ms = (end_time - start_time) * 1000
-    
-    result = {
-        "status_code": response.status_code,
-        "response_time_ms": elapsed_ms,
-        "success": response.status_code == 200
-    }
-    
-    # Store response headers that might be useful for analysis
-    result_headers = {}
-    for key in ["x-execution-time", "x-compression-ratio", "content-encoding", "content-length"]:
-        if key in response.headers:
-            result_headers[key] = response.headers[key]
-    
-    if result_headers:
-        result["headers"] = result_headers
-    
-    # Store content size for compression benchmarks
-    if response.status_code == 200:
-        result["content_size"] = len(response.content)
-    
-    return result
-
-async def benchmark_compression_single(base_url: str, compression_enabled: bool) -> List[Dict[str, Any]]:
-    """
-    Benchmark a single compression request
-    
-    Args:
-        base_url: Base URL of the API
-        compression_enabled: Whether to use compression
+    async with session.get(url, headers=headers, params=params) as response:
+        content = await response.read()
+        elapsed = time.time() - start_time
         
-    Returns:
-        List of benchmark results
-    """
-    url = f"{base_url}/techniques/compression"
-    params = {"compressed": "true" if compression_enabled else "false"}
-    
-    # Headers that indicate we can accept compressed responses
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br"
-    }
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        # Perform 5 requests
-        results = []
-        for _ in range(5):
-            result = await benchmark_request(client, url, params, headers)
-            results.append(result)
-            # Add a small delay between requests
-            await asyncio.sleep(0.1)
-    
-    return results
+        compression_info = {
+            "algorithm": response.headers.get("Content-Encoding", "none"),
+            "original_size": int(response.headers.get("X-Original-Size", "0")),
+            "compressed_size": int(response.headers.get("X-Compressed-Size", "0")),
+            "compression_ratio": float(response.headers.get("X-Compression-Ratio", "1.0")),
+            "compression_time": float(response.headers.get("X-Compression-Time-Ms", "0.0"))
+        } if use_compression else {}
+        
+        return {
+            "response_time": elapsed,
+            "content_size": len(content),
+            "compression_info": compression_info
+        }
 
-async def benchmark_compression_concurrent(base_url: str, compression_enabled: bool, concurrency: int = 10) -> List[Dict[str, Any]]:
+async def run_concurrent_requests(
+    session: aiohttp.ClientSession,
+    base_url: str,
+    use_compression: bool,
+    concurrency: int
+) -> List[Dict[str, float]]:
     """
-    Benchmark compression with concurrent requests
+    Run multiple concurrent requests
     
     Args:
+        session: aiohttp client session
         base_url: Base URL of the API
-        compression_enabled: Whether to use compression
+        use_compression: Whether to request compressed response
         concurrency: Number of concurrent requests
         
     Returns:
-        List of benchmark results
+        List of response metrics
     """
     url = f"{base_url}/techniques/compression"
-    params = {"compressed": "true" if compression_enabled else "false"}
-    
-    # Headers that indicate we can accept compressed responses
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br"
-    }
-    
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        # Perform concurrent requests
-        tasks = []
-        for _ in range(concurrency):
-            tasks.append(benchmark_request(client, url, params, headers))
-        
-        results = await asyncio.gather(*tasks)
-    
-    return results
+    tasks = [measure_response(session, url, use_compression) for _ in range(concurrency)]
+    return await asyncio.gather(*tasks)
 
-def run_compression_benchmark(base_url: str, iterations: int = 3, concurrency: int = 10) -> Dict[str, Any]:
+async def benchmark_iteration(
+    session: aiohttp.ClientSession,
+    base_url: str,
+    concurrency: int
+) -> Dict[str, Any]:
     """
-    Run the compression benchmark
+    Run one iteration of the benchmark comparing compressed vs uncompressed
     
     Args:
+        session: aiohttp client session
         base_url: Base URL of the API
-        iterations: Number of iterations
         concurrency: Number of concurrent requests
         
     Returns:
         Dictionary with benchmark results
     """
-    results = {
-        "technique": "Compression",
-        "base_url": base_url,
-        "iterations": iterations,
-        "concurrency": concurrency,
-        "timestamp": time.time(),
-        "single_request": {
-            "with_compression": [],
-            "without_compression": []
-        },
-        "concurrent_requests": {
-            "with_compression": [],
-            "without_compression": []
-        }
-    }
+    # Run uncompressed requests
+    uncompressed_results = await run_concurrent_requests(
+        session, base_url, False, concurrency
+    )
     
-    # Run single request benchmarks
-    for i in range(iterations):
-        print(f"Running single request benchmark iteration {i+1}/{iterations}...")
-        
-        # Without compression
-        without_compression_results = asyncio.run(benchmark_compression_single(base_url, False))
-        results["single_request"]["without_compression"].extend(without_compression_results)
-        
-        # With compression
-        with_compression_results = asyncio.run(benchmark_compression_single(base_url, True))
-        results["single_request"]["with_compression"].extend(with_compression_results)
+    # Run compressed requests
+    compressed_results = await run_concurrent_requests(
+        session, base_url, True, concurrency
+    )
     
-    # Run concurrent request benchmarks
-    for i in range(iterations):
-        print(f"Running concurrent request benchmark iteration {i+1}/{iterations}...")
-        
-        # Without compression
-        without_compression_results = asyncio.run(benchmark_compression_concurrent(base_url, False, concurrency))
-        results["concurrent_requests"]["without_compression"].extend(without_compression_results)
-        
-        # With compression
-        with_compression_results = asyncio.run(benchmark_compression_concurrent(base_url, True, concurrency))
-        results["concurrent_requests"]["with_compression"].extend(with_compression_results)
+    # Calculate metrics
+    uncompressed_times = [r["response_time"] for r in uncompressed_results]
+    compressed_times = [r["response_time"] for r in compressed_results]
     
-    # Calculate statistics
-    summary = calculate_compression_statistics(results)
-    results["summary"] = summary
+    uncompressed_sizes = [r["content_size"] for r in uncompressed_results]
+    compressed_sizes = [r["content_size"] for r in compressed_results]
     
-    # Print summary
-    print("\nCompression Benchmark Summary:")
-    print(f"Average response time without compression: {summary['without_compression']['avg_response_time_ms']:.2f} ms")
-    print(f"Average response time with compression: {summary['with_compression']['avg_response_time_ms']:.2f} ms")
-    print(f"Improvement factor: {summary['improvement_factor']:.2f}x")
-    
-    return results
-
-def calculate_compression_statistics(results: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Calculate statistics from benchmark results
-    
-    Args:
-        results: Benchmark results
-        
-    Returns:
-        Dictionary with statistics
-    """
-    # Extract response times and content sizes
-    uncompressed_times = []
-    compressed_times = []
-    uncompressed_sizes = []
-    compressed_sizes = []
-    
-    # Process single request results
-    for result in results["single_request"]["without_compression"]:
-        if result["success"]:
-            uncompressed_times.append(result["response_time_ms"])
-            if "content_size" in result:
-                uncompressed_sizes.append(result["content_size"])
-    
-    for result in results["single_request"]["with_compression"]:
-        if result["success"]:
-            compressed_times.append(result["response_time_ms"])
-            if "content_size" in result:
-                compressed_sizes.append(result["content_size"])
-    
-    # Process concurrent request results
-    for result in results["concurrent_requests"]["without_compression"]:
-        if result["success"]:
-            uncompressed_times.append(result["response_time_ms"])
-            if "content_size" in result:
-                uncompressed_sizes.append(result["content_size"])
-    
-    for result in results["concurrent_requests"]["with_compression"]:
-        if result["success"]:
-            compressed_times.append(result["response_time_ms"])
-            if "content_size" in result:
-                compressed_sizes.append(result["content_size"])
-    
-    # Calculate statistics
-    without_compression_stats = {
-        "avg_response_time_ms": statistics.mean(uncompressed_times) if uncompressed_times else 0,
-        "min_response_time_ms": min(uncompressed_times) if uncompressed_times else 0,
-        "max_response_time_ms": max(uncompressed_times) if uncompressed_times else 0,
-        "median_response_time_ms": statistics.median(uncompressed_times) if uncompressed_times else 0,
-        "stdev_response_time_ms": statistics.stdev(uncompressed_times) if len(uncompressed_times) > 1 else 0,
-        "sample_size": len(uncompressed_times)
-    }
-    
-    with_compression_stats = {
-        "avg_response_time_ms": statistics.mean(compressed_times) if compressed_times else 0,
-        "min_response_time_ms": min(compressed_times) if compressed_times else 0,
-        "max_response_time_ms": max(compressed_times) if compressed_times else 0,
-        "median_response_time_ms": statistics.median(compressed_times) if compressed_times else 0,
-        "stdev_response_time_ms": statistics.stdev(compressed_times) if len(compressed_times) > 1 else 0,
-        "sample_size": len(compressed_times)
-    }
-    
-    # Calculate improvement factor
-    if with_compression_stats["avg_response_time_ms"] > 0:
-        improvement_factor = without_compression_stats["avg_response_time_ms"] / with_compression_stats["avg_response_time_ms"]
-    else:
-        improvement_factor = 0
-    
-    # Calculate compression ratio if we have size data
-    if uncompressed_sizes and compressed_sizes:
-        avg_uncompressed_size = statistics.mean(uncompressed_sizes)
-        avg_compressed_size = statistics.mean(compressed_sizes)
-        compression_ratio = avg_uncompressed_size / avg_compressed_size if avg_compressed_size > 0 else 0
-    else:
-        compression_ratio = 0
-    
-    # Calculate requests per second
-    if without_compression_stats["avg_response_time_ms"] > 0:
-        without_compression_rps = 1000 / without_compression_stats["avg_response_time_ms"]
-    else:
-        without_compression_rps = 0
-    
-    if with_compression_stats["avg_response_time_ms"] > 0:
-        with_compression_rps = 1000 / with_compression_stats["avg_response_time_ms"]
-    else:
-        with_compression_rps = 0
-    
-    without_compression_stats["requests_per_second"] = without_compression_rps
-    with_compression_stats["requests_per_second"] = with_compression_rps
+    compression_info = compressed_results[0]["compression_info"]
     
     return {
-        "without_compression": without_compression_stats,
-        "with_compression": with_compression_stats,
-        "improvement_factor": improvement_factor,
-        "avg_compression_ratio": compression_ratio,
-        "avg_response_time_ms": with_compression_stats["avg_response_time_ms"],
-        "requests_per_second": with_compression_rps
+        "uncompressed": {
+            "avg_response_time": mean(uncompressed_times),
+            "avg_size": mean(uncompressed_sizes),
+            "min_time": min(uncompressed_times),
+            "max_time": max(uncompressed_times)
+        },
+        "compressed": {
+            "avg_response_time": mean(compressed_times),
+            "avg_size": mean(compressed_sizes),
+            "min_time": min(compressed_times),
+            "max_time": max(compressed_times),
+            "compression_info": compression_info
+        }
+    }
+
+def run_compression_benchmark(base_url: str, iterations: int = 3, concurrency: int = 10) -> Dict[str, Any]:
+    """
+    Run compression benchmark
+    
+    Args:
+        base_url: Base URL of the API
+        iterations: Number of benchmark iterations
+        concurrency: Number of concurrent requests per iteration
+        
+    Returns:
+        Dictionary with benchmark results
+    """
+    logger.info(f"\nStarting Compression Benchmark")
+    logger.info(f"{'=' * 80}")
+    
+    async def run_benchmark():
+        async with aiohttp.ClientSession() as session:
+            results = []
+            for i in range(iterations):
+                logger.info(f"\nIteration {i+1}/{iterations}")
+                logger.info(f"{'-' * 80}")
+                
+                iteration_result = await benchmark_iteration(
+                    session, base_url, concurrency
+                )
+                results.append(iteration_result)
+                
+                # Log detailed results for this iteration
+                uncompressed = iteration_result["uncompressed"]
+                compressed = iteration_result["compressed"]
+                compression_info = compressed["compression_info"]
+                
+                logger.info(
+                    f"\nIteration {i+1} Results:\n"
+                    f"  Uncompressed:\n"
+                    f"    - Avg response time: {uncompressed['avg_response_time']*1000:.2f} ms\n"
+                    f"    - Avg response size: {uncompressed['avg_size']/1024:.2f} KB\n"
+                    f"    - Time range: {uncompressed['min_time']*1000:.2f} - {uncompressed['max_time']*1000:.2f} ms\n"
+                    f"  Compressed:\n"
+                    f"    - Avg response time: {compressed['avg_response_time']*1000:.2f} ms\n"
+                    f"    - Avg response size: {compressed['avg_size']/1024:.2f} KB\n"
+                    f"    - Time range: {compressed['min_time']*1000:.2f} - {compressed['max_time']*1000:.2f} ms\n"
+                    f"    - Compression algorithm: {compression_info['algorithm']}\n"
+                    f"    - Compression ratio: {compression_info['compression_ratio']:.2f}x\n"
+                    f"    - Compression time: {compression_info['compression_time']:.2f} ms"
+                )
+            
+            return results
+    
+    # Run benchmark
+    results = asyncio.run(run_benchmark())
+    
+    # Calculate final averages
+    avg_uncompressed_time = mean([r["uncompressed"]["avg_response_time"] for r in results])
+    avg_compressed_time = mean([r["compressed"]["avg_response_time"] for r in results])
+    avg_uncompressed_size = mean([r["uncompressed"]["avg_size"] for r in results])
+    avg_compressed_size = mean([r["compressed"]["avg_size"] for r in results])
+    
+    improvement_factor = avg_uncompressed_time / avg_compressed_time if avg_compressed_time > 0 else float('inf')
+    compression_ratio = avg_uncompressed_size / avg_compressed_size if avg_compressed_size > 0 else float('inf')
+    
+    # Log final summary
+    logger.info(f"\nCompression Benchmark Summary:")
+    logger.info(f"{'=' * 80}")
+    logger.info(
+        f"Overall Results:\n"
+        f"  Response Times:\n"
+        f"    - Uncompressed: {avg_uncompressed_time*1000:.2f} ms\n"
+        f"    - Compressed: {avg_compressed_time*1000:.2f} ms\n"
+        f"    - Improvement factor: {improvement_factor:.2f}x\n"
+        f"  Response Sizes:\n"
+        f"    - Uncompressed: {avg_uncompressed_size/1024:.2f} KB\n"
+        f"    - Compressed: {avg_compressed_size/1024:.2f} KB\n"
+        f"    - Compression ratio: {compression_ratio:.2f}x"
+    )
+    
+    return {
+        "summary": {
+            "avg_response_time_ms": avg_compressed_time * 1000,
+            "requests_per_second": concurrency / avg_compressed_time,
+            "improvement_factor": improvement_factor,
+            "compression_ratio": compression_ratio
+        },
+        "details": {
+            "iterations": results
+        }
     }
 
 if __name__ == "__main__":

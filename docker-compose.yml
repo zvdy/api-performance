@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL database for testing relational data operations
   postgres:

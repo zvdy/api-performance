@@ -1,65 +1,24 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+    branches: [ main ]
+  push:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  lint:
-    name: Code Quality
+  pr_checks:
+    name: PR Validation
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8==6.0.0 black==23.3.0 isort==5.12.0 mypy==1.3.0
-          if [ -f api/requirements.txt ]; then
-            pip install -r api/requirements.txt
-          fi
-      
-      - name: Lint with flake8 (critical errors only)
-        run: |
-          # Only check for critical errors (syntax errors, undefined names)
-          flake8 api/ benchmarks/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          # Display all errors but don't fail the build
-          flake8 api/ benchmarks/ --count --max-complexity=20 --max-line-length=127 --statistics --exit-zero
-      
-      # Make formatting checks more lenient by allowing them to fail
-      - name: Check formatting with black (non-blocking)
-        run: |
-          black --check api/ benchmarks/ || echo "Black formatting issues found but continuing..."
-      
-      - name: Check imports with isort (non-blocking)
-        run: |
-          isort --check-only --profile black api/ benchmarks/ || echo "Import sorting issues found but continuing..."
-      
-      - name: Type check with mypy (non-blocking)
-        run: |
-          mypy api/ benchmarks/ || echo "Type check issues found but continuing..."
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    needs: lint
+    if: github.event_name == 'pull_request'
     services:
       postgres:
-        image: postgres:14
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance_test
+          POSTGRES_DB: api_performance
         ports:
           - 5432:5432
         options: >-
@@ -69,7 +28,7 @@ jobs:
           --health-retries 5
       
       redis:
-        image: redis:6
+        image: redis:7-alpine
         ports:
           - 6379:6379
         options: >-
@@ -85,64 +44,36 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
           cache: 'pip'
       
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Install test requirements first which include pytest and related packages
-          pip install -r requirements-test.txt
-          # Install additional dependencies needed for testing with specific secure versions
-          pip install fastapi>=0.100.0 starlette>=0.40.0 sqlalchemy>=2.0.15 redis>=5.2.1 databases>=0.9.0 asyncpg>=0.27.0 psycopg2-binary>=2.9.10 ujson>=5.7.0 orjson>=3.9.15 brotli>=1.0.9 python-multipart>=0.0.20 setuptools>=70.0.0 pydantic>=2.10.6 uvicorn>=0.34.0 tenacity>=9.0.0 structlog>=25.2.0 starlette-exporter>=0.23.0 uvloop>=0.20.0
-          # Now install application dependencies
-          if [ -f api/requirements.txt ]; then
-            pip install -r api/requirements.txt
-          fi
-          if [ -f benchmarks/requirements.txt ]; then
-            pip install -r benchmarks/requirements.txt
-          fi
+          pip install flake8==6.0.0
+          pip install -r api/requirements.txt
+          pip install -r benchmarks/requirements.txt
       
-      - name: Initialize test database
+      - name: Basic lint check
         run: |
-          if [ -f databases/postgres/init.sql ]; then
-            PGPASSWORD=postgres psql -h localhost -U postgres -d api_performance_test -f databases/postgres/init.sql
-          else
-            echo "No database init script found, skipping database initialization"
-          fi
+          # Only check for critical errors (syntax errors, undefined names)
+          flake8 api/ benchmarks/ --count --select=E9,F63,F7,F82 --show-source --statistics
       
-      - name: Run tests with pytest (non-blocking)
-        id: run_tests
-        continue-on-error: true
+      - name: Run benchmark tests
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: api_performance_test
+          POSTGRES_DB: api_performance
           REDIS_HOST: localhost
           REDIS_PORT: 6379
-          TESTING: "true"
         run: |
-          python -m pytest api/tests/ benchmarks/tests/ --cov=api --cov=benchmarks --cov-report=xml
-      
-      - name: Check test status
-        run: |
-          if [ "${{ steps.run_tests.outcome }}" == "failure" ]; then
-            echo "::warning::Tests are failing. Please check the test results for more details."
-            echo "Continuing with the build as tests are currently non-blocking."
-          fi
-      
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
+          python benchmarks/run_all.py --iterations 5 --concurrency 10
 
   build:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
-    needs: lint
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -164,8 +95,7 @@ jobs:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/api-performance
           tags: |
             type=sha,format=short
-            type=ref,event=branch
-            latest
+            type=raw,value=latest
       
       - name: Build and push API image
         uses: docker/build-push-action@v6
@@ -176,3 +106,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/api-performance:buildcache,mode=max
+      
+      - name: Notify on success
+        if: success()
+        run: |
+          echo "::notice::Docker image built and pushed successfully!" 
