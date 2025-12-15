@@ -57,7 +57,7 @@ jobs:
           python benchmark.py --url ${{ github.event.inputs.target_url }} --requests ${{ github.event.inputs.requests }} --concurrency ${{ github.event.inputs.concurrency }} --technique ${{ github.event.inputs.technique }}
       
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: benchmark-results
           path: |
